@@ -19,8 +19,8 @@ pub(crate) struct LineColumn {
 impl LineColumn {
     pub(crate) fn new(span: Span) -> Self {
         Self {
-            line: span.line(),
-            column: span.column(),
+            line: span.start().line,
+            column: span.start().column,
         }
     }
 }
@@ -45,7 +45,7 @@ impl Buf {
         let start = span.start();
         let end = span.end();
 
-        if (start.line() == 0 && start.column() == 0) || (end.line() == 0 && end.column() == 0) {
+        if (start.line == 0 && start.column == 0) || (end.line == 0 && end.column == 0) {
             // Try compat.
             let (start, end) = self.find_line_column(span)?;
 
@@ -63,8 +63,8 @@ impl Buf {
         } else {
             Ok(Cursor::new(
                 span,
-                LineColumn::new(start),
-                LineColumn::new(end),
+                LineColumn { line: start.line, column: start.column },
+                LineColumn { line: end.line, column: end.column },
             ))
         }
     }
@@ -74,12 +74,12 @@ impl Buf {
         let start = span.start();
 
         // Try to use compat layer.
-        if start.line() == 0 && start.column() == 0 {
+        if start.line == 0 && start.column == 0 {
             // Try compat.
             let (column, _) = self.find_line_column(span)?;
             Ok(LineColumn { line: 1, column })
         } else {
-            Ok(LineColumn::new(start))
+            Ok(LineColumn { line: start.line, column: start.column })
         }
     }
 
@@ -88,12 +88,12 @@ impl Buf {
         let end = span.end();
 
         // Try to use compat layer.
-        if end.line() == 0 && end.column() == 0 {
+        if end.line == 0 && end.column == 0 {
             // Try compat.
             let (_, column) = self.find_line_column(span)?;
             Ok(LineColumn { line: 1, column })
         } else {
-            Ok(LineColumn::new(end))
+            Ok(LineColumn { line: end.line, column: end.column })
         }
     }
 

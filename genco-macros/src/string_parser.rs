@@ -20,15 +20,15 @@ pub(crate) struct Options {
 
 fn adjust_start(start: Span) -> LineColumn {
     LineColumn {
-        line: start.line(),
-        column: start.column() + 1,
+        line: start.start().line,
+        column: start.start().column + 1,
     }
 }
 
 fn adjust_end(end: Span) -> LineColumn {
     LineColumn {
-        line: end.line(),
-        column: end.column().saturating_sub(1),
+        line: end.end().line,
+        column: end.end().column.saturating_sub(1),
     }
 }
 
@@ -208,8 +208,8 @@ impl<'a> StringParser<'a> {
             // Note: adjusting span since we expect the quoted string to be
             // withing a block, where the interior span is one character pulled
             // in in each direction.
-            start: adjust_start(span.start()),
-            end: adjust_end(span.end()),
+            start: adjust_start(span),
+            end: adjust_end(span),
             span,
         }
     }
@@ -224,8 +224,8 @@ impl<'a> StringParser<'a> {
                 let escape = input.parse::<syn::Token![$]>()?;
                 encoder.encode_char(
                     '$',
-                    LineColumn::new(start.span().start()),
-                    LineColumn::new(escape.span().end()),
+                    LineColumn::new(start.span()),
+                    LineColumn::new(escape.span()),
                 )?;
                 continue;
             }
@@ -241,15 +241,15 @@ impl<'a> StringParser<'a> {
                                 let s = content.parse::<syn::LitStr>()?;
                                 encoder.encode_str(
                                     &s.value(),
-                                    LineColumn::new(start.start()),
-                                    Some(LineColumn::new(end.end())),
+                                    LineColumn::new(start),
+                                    Some(LineColumn::new(end)),
                                 )?;
                             } else {
                                 let expr = content.parse::<syn::Expr>()?;
                                 encoder.raw_expr(
                                     &expr,
-                                    LineColumn::new(start.start()),
-                                    Some(LineColumn::new(end.end())),
+                                    LineColumn::new(start),
+                                    Some(LineColumn::new(end)),
                                 )?;
                             }
                         }
@@ -270,8 +270,8 @@ impl<'a> StringParser<'a> {
                         let ident = input.parse::<syn::Ident>()?;
                         encoder.eval_ident(
                             &ident,
-                            LineColumn::new(start.start()),
-                            Some(LineColumn::new(ident.span().end())),
+                            LineColumn::new(start),
+                            Some(LineColumn::new(ident.span())),
                         )?;
                         continue;
                     }
@@ -285,8 +285,8 @@ impl<'a> StringParser<'a> {
                     requirements.merge_with(req);
                     encoder.eval_stream(
                         stream,
-                        LineColumn::new(start.start()),
-                        Some(LineColumn::new(end.end())),
+                        LineColumn::new(start),
+                        Some(LineColumn::new(end)),
                     )?;
                 }
 
@@ -296,8 +296,8 @@ impl<'a> StringParser<'a> {
             let tt = input.parse::<TokenTree>()?;
             encoder.extend_tt(
                 &tt,
-                LineColumn::new(tt.span().start()),
-                Some(LineColumn::new(tt.span().end())),
+                LineColumn::new(tt.span()),
+                Some(LineColumn::new(tt.span())),
             )?;
         }
 
